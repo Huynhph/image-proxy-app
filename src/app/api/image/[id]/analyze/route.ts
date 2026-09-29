@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+const GEMINI_MODEL = "gemini-3.8-flash";
 const DEFAULT_PROMPT = `Phân tích ảnh marketing này và chỉ trả về JSON hợp lệ theo schema được yêu cầu. Không dùng markdown. Nếu không xác định được dữ liệu, dùng null hoặc mảng rỗng.`;
 
 const RESPONSE_SCHEMA = {
@@ -90,7 +91,7 @@ export async function POST(
     const base64 = binary.toString("base64");
 
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -112,7 +113,6 @@ export async function POST(
           generationConfig: {
             responseMimeType: "application/json",
             responseSchema: RESPONSE_SCHEMA,
-            temperature: 0.2,
             maxOutputTokens: 600,
           },
         }),
@@ -155,7 +155,7 @@ export async function POST(
       fileName: image.file_name,
       mimeType,
       fileSize: image.file_size,
-      model: "gemini-2.5-flash",
+      model: GEMINI_MODEL,
       analysis,
     });
   } catch (error) {
