@@ -30,6 +30,14 @@ function extensionFromContentType(contentType: string) {
   return "bin";
 }
 
+function getAppBaseUrl(req: NextRequest) {
+  const forwardedProto = req.headers.get("x-forwarded-proto") || "https";
+  const forwardedHost = req.headers.get("x-forwarded-host") || req.headers.get("host");
+
+  if (forwardedHost) return `${forwardedProto}://${forwardedHost}`;
+  return new URL(req.url).origin;
+}
+
 export async function POST(req: NextRequest) {
   let uploadedPath: string | null = null;
 
@@ -51,6 +59,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = getSupabaseAdmin();
+    const appBaseUrl = getAppBaseUrl(req);
     const { data: existing, error: existingError } = await supabase
       .from("image_links")
       .select("id, direct_url")
@@ -65,6 +74,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         originalUrl: imageUrl,
         directViewUrl: existing.direct_url,
+        agentViewUrl: `${appBaseUrl}/api/image/${existing.id}`,
         id: existing.id,
         cached: true,
       });
@@ -146,6 +156,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       originalUrl: savedImage.original_url,
       directViewUrl: savedImage.direct_url,
+      agentViewUrl: `${appBaseUrl}/api/image/${savedImage.id}`,
       id: savedImage.id,
       leadId: savedImage.lead_id,
       createdAt: savedImage.created_at,
