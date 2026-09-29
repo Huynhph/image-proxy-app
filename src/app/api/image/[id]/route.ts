@@ -26,7 +26,7 @@ export async function GET(
 
     const { data: image, error: imageError } = await supabase
       .from("image_links")
-      .select("file_name, content_type")
+      .select("file_name, content_type, file_size")
       .eq("id", id)
       .maybeSingle();
 
@@ -48,13 +48,18 @@ export async function GET(
       return NextResponse.json({ error: "Không thể tải ảnh từ storage." }, { status: 502 });
     }
 
-    return new NextResponse(file.stream(), {
+    const binary = await file.arrayBuffer();
+    const contentType = image.content_type || file.type || "application/octet-stream";
+
+    return new NextResponse(binary, {
       status: 200,
       headers: {
-        "Content-Type": image.content_type || file.type || "application/octet-stream",
+        "Content-Type": contentType,
+        "Content-Length": String(binary.byteLength),
         "Content-Disposition": "inline",
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "public, max-age=3600",
         "X-Content-Type-Options": "nosniff",
+        "Access-Control-Allow-Origin": "*",
       },
     });
   } catch (error) {
